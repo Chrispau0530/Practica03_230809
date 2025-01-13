@@ -7,7 +7,7 @@ const app = express();
 
 //Configuración de la sesión
 app.use(session({
-    secret: 'mi-clave-secreta', //Secreto para firmar la cookie de sesión
+    secret: 'ChrisPau0632', //Secreto para firmar la cookie de sesión
     resave:false,  //No resguardar la sesión si no ha sido modificada
     saveUninitialized:false,  //Guardar la sesión aunque no haya sido inicializada
     cookie:{secure:false}  //Usar secure:true solo si usas HTTPS
@@ -36,12 +36,14 @@ app.get('/session',(req,res)=>{
         console.log(`La duración de la sesión es de ${sessionDuration} segundos.`);
         
         res.send(`
+            <center>
             <h1>Detalles de la sesion</h1>
             <p><strong>ID de sesión:</strong>${sessionId}</p>
             <p><strong>Usuario:</strong>${user || 'No definido'}</p>
             <p><strong>Fecha de creación de la sesión:</strong>${createdAt}</p>
             <p><strong>último acceso:</strong>${lastAccess}</p>
             <p><strong>Duración de la sesión (en segundos):</strong>${sessionDuration}</p>
+            </center>
             `);
     }
 })
