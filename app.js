@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const moment = require ('moment-timezone');
 
 const app = express();
 const port = 3000;
@@ -10,15 +11,16 @@ app.use(express.json());
 
 // Configuración de la sesión
 app.use(session({
-    secret: 'Chris_230',  // Una clave secreta para cifrar la sesión
+    secret: 'p3-CPRP#CHRISPAU-sesionespersistentes',  // Una clave secreta para cifrar la sesión
     resave: false,  // No resguardar la sesión si no hay cambios
     saveUninitialized: true,  // Guardar la sesión incluso si no se ha modificado
-    cookie: { secure: false }  // Usar false para que funcione en entorno local sin HTTPS
+    //cookie: { secure: false } 
+    cookie: {secure: false, maxAge: 24 *60 * 60 * 1000  }  // Usar false para que funcione en entorno local sin HTTPS,maxAge permite definir la duracion maxima de la sesion 
 }));
 
 // Ruta para mostrar el formulario de login
 // Ruta para mostrar el formulario de login
-app.get('/papa', (req, res) => {
+app.get('/user', (req, res) => {
     res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -136,7 +138,6 @@ app.get('/papa', (req, res) => {
 // Ruta POST para manejar el login
 app.post('/login', (req, res) => {
     const { user } = req.body;  // Recuperamos el nombre de usuario desde el formulario
-
     if (user) {
         req.session.user = user;  // Guardamos el nombre de usuario en la sesión
         req.session.createdAt = new Date().toISOString();  // Guardamos la fecha de creación de la sesión
@@ -193,6 +194,74 @@ app.get('/session', (req, res) => {
         `);
     }
 });
+//Ruta para inicializar la sesion 
+
+app.get('/papa',(req,res)=>{
+if(!req.session.createdAt){
+ req.session.createdAt= new Date();
+ req.session.lastAccess = new Date();
+ res.send("La sesion ha sido iniciada")   
+}else{
+    res.send("Ya existe la sesion")
+}
+
+})
+
+//Ruta para actualizar la fecha de ultima consulta 
+app.get("/update",(req,res)=>{
+if(req.session.createdAt){
+    req.session.lastAccess = new Date();
+    res.send("La fecha de ultimo acceso ha sido actualizada ")
+}else{
+    res.send("No hay una sesion activa ")
+}
+})
+
+
+//Ruta para obtener el estado de la sesion 
+app.get('/status',(req,res) => {
+    if(req.session.createdAt){
+        const now = new Date();
+        const started = new Date(req.session.createdAt)
+        const lastUpdate = new Date(req.session.lastAccess)
+
+        //Calcular la antiguedad de la sesion 
+        const sesionAgeMS= now - started;
+        const hours = Math.floor(sesionAgeMS/ (100*60*60))
+        const minutes = Math.floor((sesionAgeMS % (1000*60*60))/(1000*60))
+        const seconds=Math.floor((sesionAgeMS % (1000*60))/1000)
+
+        const createAD_CDMX = moment(started).tz('America/Mexico_Ciry').format('YYY-MM-DD HH:mm:ss')
+        const lastAccess = moment(lastUpdate).tz('America/Mexico_Ciry').format('YYY-MM-DD HH:mm:ss')
+res.json({
+    message : 'Estado de la sesion',
+    sessionId : req.sessionID,
+    inicio:createAD_CDMX,
+    ultimoAcceso: lastAccess,
+    antiguedad:`${hours} horas ,${minutes} minutos y ${seconds} segundos `
+})
+
+    }else{
+        res.send('No existe una cuenta para el status')
+    }
+})
+
+// Ruta para cerrar la sesion 
+
+app.get('/lagout',(req,res)=>{
+    if(req.session.createdAt){
+        req.session.destroy((err)=>{
+            if(err){
+                return res.status(500).send('Error al cerrar sesion ')
+            }
+            res.send('sesion cerrada correctamente ')
+        })
+    }else{
+        res.send('No hay una sesion activa para cerrar')
+    }
+})
+
+
 
 app.listen(port, () => {
     console.log(`Servidor en ejecución en http://localhost:${port}`);
